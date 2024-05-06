@@ -10,9 +10,15 @@ import {
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import LoginScreen from "./screens/login";
+import { useEffect, useState } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { firebaseApp } from "./firebaseConfig";
+import { useAuthStore } from "./store";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const unAuthStack = createNativeStackNavigator();
 
 function MyTabs() {
   return (
@@ -74,18 +80,42 @@ function MyTabs() {
 }
 
 export default function App() {
+  const auth = getAuth(firebaseApp);
+  // const [user, setUser] = useState();
+  const { user, setUser } = useAuthStore();
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("Authenticated! " + user.uid);
+        setUser(user);
+      } else {
+        console.log("error");
+      }
+    });
+  }, []);
   return (
     <NavigationContainer>
       <StatusBar style="auto" />
-      <Stack.Navigator
-        initialRouteName="Main"
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="Main" component={MyTabs} />
-        <Stack.Screen name="Details" component={DetailsScreen} />
-      </Stack.Navigator>
+      {user ? (
+        <Stack.Navigator
+          initialRouteName="Main"
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="Main" component={MyTabs} />
+          <Stack.Screen name="Details" component={DetailsScreen} />
+        </Stack.Navigator>
+      ) : (
+        <unAuthStack.Navigator
+          initialRouteName="Login"
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          <unAuthStack.Screen name="Login" component={LoginScreen} />
+        </unAuthStack.Navigator>
+      )}
     </NavigationContainer>
   );
 }
