@@ -1,11 +1,16 @@
 import {
+  Timestamp,
   addDoc,
   collection,
   deleteDoc,
   doc,
+  documentId,
   getDocs,
   getFirestore,
+  orderBy,
+  query,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
@@ -17,7 +22,7 @@ import {
 } from "react-native";
 import { firebaseApp } from "../firebaseConfig";
 import { AntDesign } from "@expo/vector-icons";
-import { useStore } from "../store";
+import { useAuthStore, useStore } from "../store";
 
 const HomeScreen = ({ navigation }) => {
   const [text, setText] = useState("");
@@ -25,11 +30,19 @@ const HomeScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
   const { updatedTime, setUpdatedTime } = useStore();
+  const { user, setUser } = useAuthStore();
   const db = getFirestore(firebaseApp);
 
   const getData = async () => {
     let newTasks = [];
-    const querySnapshot = await getDocs(collection(db, "task"));
+
+    const querySnapshot = await getDocs(
+      query(
+        collection(db, "task"),
+        where("uid", "==", user.uid),
+        orderBy("createdAt", "desc")
+      )
+    );
     querySnapshot.forEach((doc) => {
       let data = { ...doc.data(), id: doc.id };
       newTasks.push(data);
@@ -44,12 +57,16 @@ const HomeScreen = ({ navigation }) => {
     if (text == "") {
       return;
     }
+
+    console.log("current time : " + Timestamp.now());
     try {
       setIsLoading(true);
       const docRef = await addDoc(collection(db, "task"), {
+        uid: user.uid,
         text: text,
         description: description,
         isDone: false,
+        createdAt: Timestamp.now(),
       });
       setIsLoading(false);
       getData();

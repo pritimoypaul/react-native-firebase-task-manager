@@ -20,6 +20,7 @@ const ProfileScreen = ({ navigation }) => {
   return (
     <View className="flex-1 items-center justify-center bg-white">
       <Text>Profile</Text>
+      <Text>Logged in as : {user.email}</Text>
       <TouchableOpacity
         onPress={() => {
           user ? logoutFunction() : navigation.push("Login");
